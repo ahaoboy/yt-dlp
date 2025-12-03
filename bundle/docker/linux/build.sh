@@ -30,6 +30,8 @@ source /yt-dlp-build-venv/bin/activate
 venvpy -m ensurepip --upgrade --default-pip
 venvpy -m devscripts.install_deps --only-optional-groups --include-group build
 venvpy -m devscripts.install_deps "${INCLUDES[@]}"
+# Install ytdlp-jsc for JS challenge solving
+venvpy -m pip install -U ytdlp-jsc
 venvpy -m devscripts.make_lazy_extractors
 venvpy devscripts/update-version.py -c "${CHANNEL}" -r "${ORIGIN}" "${VERSION}"
 

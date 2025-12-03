@@ -376,6 +376,8 @@ jobs:
             mv -n -- "${wheel}" "${wheel/x86_64/universal2}"
           done
           python3 -m pip install --force-reinstall -U curl_cffi_universal2/*cffi*.whl
+          # Install ytdlp-jsc for JS challenge solving
+          python3 -m pip install -U ytdlp-jsc
 
       - name: Prepare
         run: |
@@ -490,6 +492,8 @@ jobs:
           } else {
             python devscripts/install_deps.py --include-group curl-cffi
           }
+          # Install ytdlp-jsc for JS challenge solving
+          python -m pip install -U ytdlp-jsc
 
       - name: Prepare
         shell: pwsh

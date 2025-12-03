@@ -6,6 +6,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import glob
 import platform
 
 from PyInstaller.__main__ import run as run_pyinstaller
@@ -17,6 +18,28 @@ if OS_NAME == 'linux' and platform.libc_ver()[0] != 'glibc':
     OS_NAME = 'musllinux'
 if MACHINE in ('x86', 'x86_64', 'amd64', 'i386', 'i686'):
     MACHINE = 'x86' if ARCH == '32' else ''
+
+
+def find_ytdlp_jsc_binary():
+    """Find ytdlp_jsc native binary (.pyd on Windows, .so on Linux/macOS)"""
+    try:
+        import ytdlp_jsc
+        package_dir = os.path.dirname(ytdlp_jsc.__file__)
+
+        # Search for .pyd (Windows) or .so (Linux/macOS) files
+        patterns = ['*.pyd', '*.so', '*.dylib']
+        for pattern in patterns:
+            matches = glob.glob(os.path.join(package_dir, pattern))
+            if matches:
+                return matches
+        # Also check for nested native modules
+        for pattern in patterns:
+            matches = glob.glob(os.path.join(package_dir, '**', pattern), recursive=True)
+            if matches:
+                return matches
+    except ImportError:
+        pass
+    return []
 
 
 def main():
@@ -34,6 +57,17 @@ def main():
               '"devscripts/make_lazy_extractors.py"  to build lazy extractors', file=sys.stderr)
     print(f'Destination: {final_file}\n')
 
+    # Find and add ytdlp_jsc native binaries
+    add_binary_opts = []
+    jsc_binaries = find_ytdlp_jsc_binary()
+    if jsc_binaries:
+        print(f'Found ytdlp_jsc native binaries: {jsc_binaries}')
+        separator = ';' if OS_NAME == 'win32' else ':'
+        for binary in jsc_binaries:
+            add_binary_opts.append(f'--add-binary={binary}{separator}.')
+    else:
+        print('ytdlp_jsc native binary not found, skipping')
+
     opts = [
         f'--name={name}',
         '--icon=devscripts/logo.ico',
@@ -43,6 +77,7 @@ def main():
         '--exclude-module=pkg_resources',
         '--noconfirm',
         '--additional-hooks-dir=yt_dlp/__pyinstaller',
+        *add_binary_opts,
         *opts,
         'yt_dlp/__main__.py',
     ]
